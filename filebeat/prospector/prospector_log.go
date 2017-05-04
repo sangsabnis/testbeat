@@ -10,6 +10,7 @@ import (
 	"github.com/elastic/beats/filebeat/input/file"
 	"github.com/elastic/beats/libbeat/logp"
 	"github.com/elastic/beats/libbeat/monitoring"
+	"sort"
 )
 
 const (
@@ -233,10 +234,32 @@ func (l *Log) matchesFile(filePath string) bool {
 	return false
 }
 
+type FileSortInfo struct {
+	info os.FileInfo
+	path string
+}
+
+func getSortedFiles(paths map[string]os.FileInfo) []FileSortInfo {
+
+	sortedFiles := make([]FileSortInfo, 0, len(paths))
+	for path, info := range paths {
+		sortInfo := FileSortInfo{info: info, path: path}
+		sortedFiles = append(sortedFiles, sortInfo)
+	}
+
+	sort.Slice(sortedFiles, func(i, j int) bool {
+		return sortedFiles[i].info.ModTime().Before(sortedFiles[j].info.ModTime());
+	})
+
+	return sortedFiles;
+}
+
 // Scan starts a scanGlob for each provided path/glob
 func (l *Log) scan() {
 
-	for path, info := range l.getFiles() {
+	paths := l.getFiles();
+	files := getSortedFiles(paths)
+	for _,fileInfo := range files {
 
 		select {
 		case <-l.Prospector.done:
@@ -246,14 +269,14 @@ func (l *Log) scan() {
 		}
 
 		var err error
-		path, err = filepath.Abs(path)
+		fileInfo.path, err = filepath.Abs(fileInfo.path)
 		if err != nil {
-			logp.Err("could not fetch abs path for file %s: %s", path, err)
+			logp.Err("could not fetch abs path for file %s: %s", fileInfo.path, err)
 		}
-		logp.Debug("prospector", "Check file for harvesting: %s", path)
+		logp.Debug("prospector", "Check file for harvesting: %s", fileInfo.path)
 
 		// Create new state for comparison
-		newState := file.NewState(info, path, l.config.InputType)
+		newState := file.NewState(fileInfo.info, fileInfo.path, l.config.InputType)
 
 		// Load last state
 		lastState := l.Prospector.states.FindPrevious(newState)
