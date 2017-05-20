@@ -270,26 +270,34 @@ type FileSortInfo struct {
 	path string
 }
 
-func getSortedFiles(paths map[string]os.FileInfo) []FileSortInfo {
+func getSortInfos(paths map[string]os.FileInfo) []FileSortInfo {
 
-	sortedFiles := make([]FileSortInfo, 0, len(paths))
+	sortInfos := make([]FileSortInfo, 0, len(paths))
 	for path, info := range paths {
 		sortInfo := FileSortInfo{info: info, path: path}
-		sortedFiles = append(sortedFiles, sortInfo)
+		sortInfos = append(sortInfos, sortInfo)
 	}
 
-	sort.Slice(sortedFiles, func(i, j int) bool {
-		return sortedFiles[i].info.ModTime().Before(sortedFiles[j].info.ModTime());
+	return sortInfos;
+}
+
+func getSortedFiles(sortInfos []FileSortInfo) []FileSortInfo {
+
+	sort.Slice(sortInfos, func(i, j int) bool {
+		return sortInfos[i].info.ModTime().Before(sortInfos[j].info.ModTime());
 	})
 
-	return sortedFiles;
+	return sortInfos;
 }
 
 // Scan starts a scanGlob for each provided path/glob
 func (p *Prospector) scan() {
 
 	paths := p.getFiles();
-	files := getSortedFiles(paths)
+	files := getSortInfos(paths)
+	if p.config.HarvesterScanOlder {
+		files = getSortedFiles(files)
+	}
 	for _,fileInfo := range files {
 
 		select {
