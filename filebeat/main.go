@@ -7,7 +7,7 @@ import (
 	"github.com/elastic/beats/libbeat/beat"
 )
 
-var Name = "filebeat"
+var Name = "httpbeat"
 
 // The basic model of execution:
 // - prospector: finds files in paths/globs to harvest, starts harvesters
