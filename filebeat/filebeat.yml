@@ -12,6 +12,8 @@
 
 #=========================== Filebeat prospectors =============================
 
+beat.name: httpbeat
+
 filebeat.prospectors:
 
 # Each - is a prospector. Most options can be set at the prospector level, so

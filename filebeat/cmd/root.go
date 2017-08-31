@@ -11,7 +11,7 @@ import (
 )
 
 // Name of this beat
-var Name = "filebeat"
+var Name = "httpbeat"
 
 // RootCmd to handle beats cli
 var RootCmd *cmd.BeatsRootCmd
